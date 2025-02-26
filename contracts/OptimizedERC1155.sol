@@ -141,7 +141,7 @@ contract OptimizedERC1155 is
         uint256 tokenId,
         uint256 pricePerNFT,
         uint256 amount
-    ) external {
+    ) external whenNotPaused{
         require(bytes(_tokenURIs[tokenId]).length > 0, "Only NFTs can be listed for sale");
         require(
             balanceOf(msg.sender, tokenId) >= amount,
@@ -159,7 +159,7 @@ contract OptimizedERC1155 is
      * @param tokenId ID of the token to buy.
      * @param amount Amount of tokens to purchase.
      */
-    function buyNFT(uint256 tokenId, uint256 amount) external payable {
+    function buyNFT(uint256 tokenId, uint256 amount) external payable whenNotPaused nonReentrant{
         require(!blacklisted[msg.sender], "User is blacklisted");
 
         (address seller, uint256 price) = MarketplaceLibrary.buyNFT(
@@ -170,9 +170,11 @@ contract OptimizedERC1155 is
             msg.value
         );
 
-        payable(seller).transfer(price);
 
         _safeTransferFrom(address(this), msg.sender, tokenId, amount, "");
+
+        payable(seller).transfer(price);
+
     }
     
     /**
@@ -236,7 +238,7 @@ contract OptimizedERC1155 is
         uint256 auctionId,
         uint256 bidAmount,
         uint256 bidPerNFT
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant{
         require(!blacklisted[msg.sender], "User is blacklisted");
 
         uint256 bidValue = bidAmount * bidPerNFT;
@@ -256,7 +258,7 @@ contract OptimizedERC1155 is
      * @dev Ends an auction.
      * @param auctionId ID of the auction.
      */
-    function endAuction(uint256 auctionId) external whenNotPaused {
+    function endAuction(uint256 auctionId) external whenNotPaused nonReentrant{
         require(!blacklisted[msg.sender], "User is blacklisted");
 
         (
